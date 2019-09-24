@@ -76,7 +76,6 @@ class CalendarUtils
                 'parent_name',
                 'parent_id',
                 'parent_type',
-                'priority'
             ),
             'Calls' => array(
                 'name',
@@ -87,7 +86,6 @@ class CalendarUtils
                 'parent_name',
                 'parent_id',
                 'parent_type',
-                'priority'
             ),
             'Tasks' => array(
                 'name',
@@ -306,6 +304,7 @@ class CalendarUtils
 
         if (!empty($params['until'])) {
             $end = SugarDateTime::createFromFormat($GLOBALS['timedate']->get_date_format(), $until);
+            $end->setTime(0, 0, 0);
             $end->modify("+1 Day");
         } else {
             $end = $start;

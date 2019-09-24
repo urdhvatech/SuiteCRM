@@ -1,14 +1,11 @@
 <?php
-if (!defined('sugarEntry') || !sugarEntry) {
-    die('Not A Valid Entry Point');
-}
 /**
  *
  * SugarCRM Community Edition is a customer relationship management program developed by
  * SugarCRM, Inc. Copyright (C) 2004-2013 SugarCRM Inc.
  *
  * SuiteCRM is an extension to SugarCRM Community Edition developed by SalesAgility Ltd.
- * Copyright (C) 2011 - 2018 SalesAgility Ltd.
+ * Copyright (C) 2011 - 2019 SalesAgility Ltd.
  *
  * This program is free software; you can redistribute it and/or modify it under
  * the terms of the GNU Affero General Public License version 3 as published by the
@@ -40,9 +37,6 @@ if (!defined('sugarEntry') || !sugarEntry) {
  * reasonably feasible for technical reasons, the Appropriate Legal Notices must
  * display the words "Powered by SugarCRM" and "Supercharged by SuiteCRM".
  */
-
-
-require_once('include/Smarty/Smarty.class.php');
 
 if (!defined('SUGAR_SMARTY_DIR')) {
     define('SUGAR_SMARTY_DIR', sugar_cached('smarty/'));
@@ -157,17 +151,16 @@ class Sugar_Smarty extends Smarty
         $this->assign('MOD', $mod_strings);
         $this->assign('APP_CONFIG', $sugar_config);
 
+        $state = new SuiteCRM\StateSaver();
+        $state->pushErrorLevel('sugar_smarty_errors', 'error_reporting', false);
+
         if (!(isset($sugar_config['developerMode']) && $sugar_config['developerMode'])) {
             $level = isset($sugar_config['smarty_error_level']) ? $sugar_config['smarty_error_level'] : 0;
-            $errorLevelStored = error_reporting();
             error_reporting($level);
         }
         $fetch = parent::fetch(get_custom_file_if_exists($resource_name), $cache_id, $compile_id, $display);
-        if (!(isset($sugar_config['developerMode']) && $sugar_config['developerMode'])) {
-            $level = isset($sugar_config['smarty_error_level']) ? $sugar_config['smarty_error_level'] : 0;
-            error_reporting($errorLevelStored);
-        }
-        
+        $state->popErrorLevel('sugar_smarty_errors', 'error_reporting', false);
+
         return $fetch;
     }
 

@@ -152,9 +152,8 @@ class AOW_WorkFlow extends Basic
     {
         global $beanList, $app_list_strings;
 
-        $app_list_strings['aow_moduleList'] = $app_list_strings['moduleList'];
-
-        if (!empty($app_list_strings['aow_moduleList'])) {
+        if (!empty($app_list_strings['moduleList'])) {
+            $app_list_strings['aow_moduleList'] = $app_list_strings['moduleList'];
             foreach ($app_list_strings['aow_moduleList'] as $mkey => $mvalue) {
                 if (!isset($beanList[$mkey]) || str_begin($mkey, 'AOW_')) {
                     unset($app_list_strings['aow_moduleList'][$mkey]);
@@ -273,7 +272,7 @@ class AOW_WorkFlow extends Basic
         $name,
         $custom_name,
         SugarBean $module,
-            $query = array()
+        $query = array()
     ) {
         if (!isset($query['join'][$custom_name])) {
             $query['join'][$custom_name] = 'LEFT JOIN '.$module->get_custom_table_name()
@@ -285,7 +284,7 @@ class AOW_WorkFlow extends Basic
     public function build_flow_relationship_query_join(
         $name,
         SugarBean $module,
-            $query = array()
+        $query = array()
     ) {
         if (!isset($query['join'][$name])) {
             if ($module->load_relationship($name)) {
@@ -373,7 +372,7 @@ class AOW_WorkFlow extends Basic
             foreach ($path as $rel) {
                 $query = $this->build_flow_relationship_query_join(
                     $rel,
-                        $condition_module,
+                    $condition_module,
                     $query
                 );
                 $condition_module = new $beanList[getRelatedModule($condition_module->module_dir, $rel)];
@@ -422,9 +421,9 @@ class AOW_WorkFlow extends Basic
                     if ((isset($data['source']) && $data['source'] == 'custom_fields')) {
                         $value = $module->table_name.'_cstm.'.$condition->value;
                         $query = $this->build_flow_custom_query_join(
-                                $module->table_name,
+                            $module->table_name,
                             $module->table_name.'_cstm',
-                                $module,
+                            $module,
                             $query
                         );
                     } else {
@@ -457,23 +456,33 @@ class AOW_WorkFlow extends Basic
                             $value = 'Curdate()';
                         }
                     } else {
-                        $data = null;
-                        if (isset($module->field_defs[$params[0]])) {
-                            $data = $module->field_defs[$params[0]];
+                        if (isset($params[0]) && $params[0] == 'today') {
+                            if ($sugar_config['dbconfig']['db_type'] == 'mssql') {
+                                //$field =
+                                $value  = 'CAST(GETDATE() AS DATE)';
+                            } else {
+                                $field = 'DATE('.$field.')';
+                                $value = 'Curdate()';
+                            }
                         } else {
-                            LoggerManager::getLogger()->warn('Filed def data is missing: ' . get_class($module) . '::$field_defs[' . $params[0] . ']');
-                        }
+                            $data = null;
+                            if (isset($module->field_defs[$params[0]])) {
+                                $data = $module->field_defs[$params[0]];
+                            } else {
+                                LoggerManager::getLogger()->warn('Filed def data is missing: ' . get_class($module) . '::$field_defs[' . $params[0] . ']');
+                            }
 
                         if ((isset($data['source']) && $data['source'] == 'custom_fields')) {
                             $value = $module->table_name.'_cstm.'.$params[0];
                             $query = $this->build_flow_custom_query_join(
-                                    $module->table_name,
+                                $module->table_name,
                                 $module->table_name.'_cstm',
-                                    $module,
+                                $module,
                                 $query
                             );
-                        } else {
-                            $value = $module->table_name.'.'.$params[0];
+                            } else {
+                                $value = $module->table_name.'.'.$params[0];
+                            }
                         }
                     }
 
@@ -694,7 +703,9 @@ class AOW_WorkFlow extends Basic
                             && isset($condition_bean->rel_fields_before_value[$condition->field])) {
                             $value = $condition_bean->rel_fields_before_value[$condition->field];
                         } else {
-                            $value = $condition_bean->fetched_row[$condition->field];
+                            $value = from_html($condition_bean->fetched_row[$condition->field]);
+                            // Bug - on delete bean action CRM load bean in a different way and bean can contain html characters
+                            $field = from_html($field);
                         }
                         if (in_array($data['type'], $dateFields)) {
                             $value = strtotime($value);
@@ -720,8 +731,14 @@ class AOW_WorkFlow extends Basic
                             $value = date('Y-m-d');
                             $field = strtotime(date('Y-m-d', $field));
                         } else {
-                            $fieldName = $params[0];
-                            $value = $condition_bean->$fieldName;
+                            if ($params[0] == 'today') {
+                                $dateType = 'date';
+                                $value = date('Y-m-d');
+                                $field = strtotime(date('Y-m-d', $field));
+                            } else {
+                                $fieldName = $params[0];
+                                $value = $condition_bean->$fieldName;
+                            }
                         }
 
                         if ($params[1] != 'now') {
@@ -915,7 +932,11 @@ class AOW_WorkFlow extends Basic
                 } elseif (file_exists('modules/AOW_Actions/actions/'.$action_name.'.php')) {
                     require_once('modules/AOW_Actions/actions/'.$action_name.'.php');
                 } else {
-                    return false;
+                    if (file_exists('modules/AOW_Actions/actions/'.$action_name.'.php')) {
+                        require_once('modules/AOW_Actions/actions/'.$action_name.'.php');
+                    } else {
+                        return false;
+                    }
                 }
 
                 $custom_action_name = "custom" . $action_name;

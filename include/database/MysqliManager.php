@@ -130,7 +130,7 @@ class MysqliManager extends MysqlManager
         static $queryMD5 = array();
 
         parent::countQuery($sql);
-        LoggerManager::getLogger()->info('Query:' . $this->removeLineBreaks($sql));
+        $GLOBALS['log']->info('Query:' . $sql);
         $this->checkConnection();
         $this->query_time = microtime(true);
         $this->lastsql = $sql;
@@ -355,6 +355,11 @@ class MysqliManager extends MysqlManager
             mysqli_query($this->database, $names);
         }
         mysqli_set_charset($this->database, "utf8");
+
+        // https://github.com/salesagility/SuiteCRM/issues/7107
+        // MySQL 5.7 is stricter regarding missing values in SQL statements and makes some tests fail.
+        // Remove STRICT_TRANS_TABLES from sql_mode so we get the old behaviour again.
+        mysqli_query($this->database, "SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode, 'STRICT_TRANS_TABLES', ''))");
 
         if ($this->checkError('Could Not Connect', $dieOnError)) {
             $GLOBALS['log']->info("connected to db");

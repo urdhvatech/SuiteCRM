@@ -37,7 +37,6 @@
  * reasonably feasible for technical reasons, the Appropriate Legal Notices must
  * display the words "Powered by SugarCRM" and "Supercharged by SuiteCRM".
  */
-
 if (!defined('sugarEntry') || !sugarEntry) {
     die('Not A Valid Entry Point');
 }
@@ -61,18 +60,13 @@ class SugarWidgetSubPanelTopComposeEmailButton extends SugarWidgetSubPanelTopBut
             return $temp;
         }
 
-        global $app_strings, $current_user, $sugar_config;
+        global $app_strings, $current_user;
         $title = $app_strings['LBL_COMPOSE_EMAIL_BUTTON_TITLE'];
         $value = $app_strings['LBL_COMPOSE_EMAIL_BUTTON_LABEL'];
 
         //martin Bug 19660
-        $userPref = $current_user->getPreference('email_link_type');
-        $defaultPref = $sugar_config['email_default_client'];
-        if ($userPref != '') {
-            $client = $userPref;
-        } else {
-            $client = $defaultPref;
-        }
+        $client = $current_user->getEmailClient();
+
         /** @var Person|Company|Opportunity $bean */
         $bean = $defines['focus'];
 
@@ -103,12 +97,15 @@ class SugarWidgetSubPanelTopComposeEmailButton extends SugarWidgetSubPanelTopBut
 
             $emailUI = new EmailUI();
             $emailUI->appendTick = false;
-            $button = '<div type="hidden" onclick="$(document).openComposeViewModal(this);" data-module="'
+            $button = '<a class="email-link" onclick="$(document).openComposeViewModal(this);" data-module="'
             . $bean->module_name . '" data-record-id="'
             . $bean->id . '" data-module-name="'
             . $bean->name .'" data-email-address="'
-            . $bean->email1 .'">';
+            . $bean->email1 .'">'
+            . $app_strings['LBL_COMPOSE_EMAIL_BUTTON_LABEL']
+            . '</a>';
         }
+
         return $button;
     }
 
@@ -118,7 +115,12 @@ class SugarWidgetSubPanelTopComposeEmailButton extends SugarWidgetSubPanelTopBut
         if (!$focus->ACLAccess('EditView')) {
             return '';
         }
+        
+        $inputID = $this->getWidgetId();
 
-        return parent::display($defines, $additionalFormFields);
+        $button = $this->_get_form($defines, $additionalFormFields);
+        $button .= "<a id='$inputID'>$this->form_value</a>";
+
+        return $button;
     }
 }

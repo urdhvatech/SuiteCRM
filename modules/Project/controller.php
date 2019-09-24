@@ -89,7 +89,8 @@ class ProjectController extends SugarController
     //Create new project task
     public function action_update_GanttChart()
     {
-        global $current_user, $db;
+        global $current_user;
+        $db = DBManagerFactory::getInstance();
 
         $task_name = $_POST['task_name'];
         $project_id = $_POST['project_id'];
@@ -104,8 +105,10 @@ class ProjectController extends SugarController
 
         if ($_POST['milestone'] == 'Milestone') {
             $milestone_flag = '1';
-        } elseif ($_POST['milestone'] == 'Task') {
-            $milestone_flag = '0';
+        } else {
+            if ($_POST['milestone'] == 'Task') {
+                $milestone_flag = '0';
+            }
         }
 
         $dateformat = $current_user->getPreference('datef');
